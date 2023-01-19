@@ -1,5 +1,5 @@
 (async () => {
-  const res = await fetch("./order.json");
+  const res = await fetch("./orderDB.json");
 
   if (!res.ok) {
     document.body.insertAdjacentHTML(
@@ -45,13 +45,12 @@
     `
     <tr>
       <th>id</th>
-      <th>date</th>
-      <th>fio</th>
-      <th>email</th>
-      <th>phone</th>
-      <th>address</th>
-      <th>delivery</th>
-      <th>order</th>
+      <th>createdAt</th>
+      <th>service</th>
+      <th>spec</th>
+      <th>month</th>
+      <th>day</th>
+      <th>time</th>
     </tr>
   `
   );
@@ -63,16 +62,11 @@
     <tr>
       <td>${order.id}</td>
       <td>${order.createdAt}</td>
-      <td>${order.fio}</td>
-      <td>${order.email}</td>
-      <td>${order.phone}</td>
-      <td>${order.address}</td>
-      <td>${order.delivery}</td>
-      <td style="font-family: monospace;">${order.order.map(
-        (item, i) =>
-          `${i ? "<br>" : ""}
-          id:${item.id} - кол-во:${item.count} - цвет:${item.color} - размер:${item.size}`
-      )}</td>
+      <td>${order.service}</td>
+      <td>${order.spec}</td>
+      <td>${order.month}</td>
+      <td>${order.day}</td>
+      <td>${order.time}</td>
     </tr>
     `
     );
