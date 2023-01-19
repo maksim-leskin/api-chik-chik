@@ -194,8 +194,7 @@ const getService = async (param) => {
 };
 
 createServer(async (req, res) => {
-  // req - объект с информацией о запросе, res - объект для управления отправляемым ответом
-  // чтобы не отклонять uri с img
+
   if (req.url.substring(1, 4) === "img") {
     res.statusCode = 200;
     res.setHeader("Content-Type", "image/jpeg");
@@ -205,18 +204,15 @@ createServer(async (req, res) => {
     return;
   }
 
-  // этот заголовок ответа указывает, что тело ответа будет в JSON формате
   res.setHeader("Content-Type", "application/json");
 
-  // CORS заголовки ответа для поддержки кросс-доменных запросов из браузера
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // запрос с методом OPTIONS может отправлять браузер автоматически для проверки CORS заголовков
-  // в этом случае достаточно ответить с пустым телом и этими заголовками
+
   if (req.method === "OPTIONS") {
-    // end = закончить формировать ответ и отправить его клиенту
+
     res.end();
     return;
   }
@@ -233,28 +229,23 @@ createServer(async (req, res) => {
     }
   } catch (err) {
     console.log("err: ", err);
-    // обрабатываем сгенерированную нами же ошибку
+
     if (err instanceof ApiError) {
       res.writeHead(err.statusCode);
       res.end(JSON.stringify(err.data));
     } else {
-      // если что-то пошло не так - пишем об этом в консоль и возвращаем 500 ошибку сервера
       res.statusCode = 500;
       res.end(JSON.stringify({ message: "Server Error" }));
     }
   }
-  // если URI не начинается с нужного префикса - можем сразу отдать 404
   if (!req.url || !req.url.startsWith(URI_PREFIX)) {
     res.statusCode = 404;
     res.end(JSON.stringify({ message: "Not Found" }));
     return;
   }
 
-  // убираем из запроса префикс URI, разбиваем его на путь и параметры
   const [uri, query] = req.url.substring(URI_PREFIX.length).split("?");
   const queryParams = {};
-  // параметры могут отсутствовать вообще или иметь вид a=b&b=c
-  // во втором случае наполняем объект queryParams { a: 'b', b: 'c' }
   if (query) {
     for (const piece of query.split("&")) {
       const [key, value] = piece.split("=");
@@ -263,7 +254,6 @@ createServer(async (req, res) => {
   }
 
   try {
-    // обрабатываем запрос и формируем тело ответа
 
     const body = await (async () => {
       const postPrefix = uri.substring(1);
@@ -271,7 +261,6 @@ createServer(async (req, res) => {
 
       if (req.method !== "GET") return;
       if (uri === "" || uri === "/") {
-        // /api/goods
         return await getService(queryParams);
       }
 
@@ -280,18 +269,15 @@ createServer(async (req, res) => {
     res.end(JSON.stringify(body));
   } catch (err) {
     console.log("err: ", err);
-    // обрабатываем сгенерированную нами же ошибку
     if (err instanceof ApiError) {
       res.writeHead(err.statusCode);
       res.end(JSON.stringify(err.data));
     } else {
-      // если что-то пошло не так - пишем об этом в консоль и возвращаем 500 ошибку сервера
       res.statusCode = 500;
       res.end(JSON.stringify({ message: "Server Error" }));
     }
   }
 })
-  // выводим инструкцию, как только сервер запустился...
   .on("listening", () => {
     if (process.env.NODE_ENV !== "test") {
       console.log(
@@ -313,125 +299,4 @@ createServer(async (req, res) => {
       console.log(`POST /api/order - оформить заказ`);
     }
   })
-  // ...и вызываем запуск сервера на указанном порту
   .listen(PORT);
-
-/*
-import { readFileSync, readFile, writeFile } from "node:fs";
-
-import path from "path";
-import * as url from "url";
-const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
-const DB_FILE = path.resolve(__dirname, "db.json");
-
-const db = JSON.parse(readFileSync(DB_FILE) || "[]");
-const orders = JSON.parse(readFileSync(ORDER_FILE) || "[]");
-
-
-
-
-
-const shuffle = (array) => {
-  const shuffleArray = [...array];
-  for (let i = shuffleArray.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1));
-    [shuffleArray[i], shuffleArray[j]] = [shuffleArray[j], shuffleArray[i]];
-  }
-
-  return shuffleArray;
-};
-
-
-
-const pagination = (data, page, count) => {
-  const end = count * page;
-  const start = page === 1 ? 0 : end - count;
-  const totalCount = data.length;
-
-  const pages = Math.ceil(data.length / count);
-
-  return {
-    goods: data.slice(start, end),
-    page,
-    pages,
-    totalCount,
-  };
-};
-
-const getGoodsList = (params) => {
-  const keys = Object.keys(params);
-  if (keys.length) {
-    const isKeys = keys.every((item) =>
-      [
-        "page",
-        "count",
-        "gender",
-        "category",
-        "type",
-        "search",
-        "list",
-      ].includes(item)
-    );
-
-    if (!isKeys) {
-      throw new ApiError(403, { message: "Fail Params" });
-    }
-  }
-
-  const page = +params.page || 1;
-  let paginationCount = +params.count || 12;
-
-  let data = [...db.goods];
-
-  if (params.gender) {
-    if (params.gender === "all") {
-      paginationCount = +params.count || 4;
-    } else {
-      data = data.filter((item) => item.gender === params.gender);
-      paginationCount = +params.count || 8;
-    }
-
-    if (!params.category) {
-      data = data.filter((item) => item.top);
-      data = shuffle(data);
-      data.length = paginationCount;
-      return data;
-    }
-  }
-
-  if (params.category) {
-    if (!params.gender)
-      throw new ApiError(403, { message: "Not gender params" });
-    data = data.filter((item) => item.category === params.category);
-  }
-
-  if (params.type) {
-    data = data.filter((item) => item.type === params.type);
-  }
-
-  if (params.search) {
-    const search = params.search.trim().toLowerCase();
-    data = db.goods.filter((item) => {
-      return (
-        item.title.toLowerCase().includes(search) ||
-        item.description.toLowerCase().includes(search)
-      );
-    });
-  }
-
-  if (params.list) {
-    const list = params.list.trim().toLowerCase();
-    return db.goods.filter((item) => list.includes(item.id));
-  }
-
-  return pagination(data, page, paginationCount);
-};
-
-const getItems = (itemId) => {
-  const item = db.goods.find(({ id }) => id === itemId);
-  if (!item) throw new ApiError(404, { message: "Item Not Found" });
-  return item;
-};
-
-
-  */
