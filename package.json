@@ -1,12 +1,13 @@
 {
-  "name": "technoshopapi",
+  "name": "api-chik-chik",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index"
+    "start": "node index"
   },
   "type": "module",
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "engines": { "node": "16.x" }
 }
