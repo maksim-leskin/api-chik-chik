@@ -120,7 +120,7 @@ getSpecificWeekdayDates(3, [3]).forEach((item) => {
 });
 
 const updateDB = async () => {
-  if (!(await checkUpdateDB())) {
+  if (await checkUpdateDB()) {
     console.log("start update db");
     readFile(specDB)
       .then((data) => {
@@ -149,7 +149,6 @@ const updateDB = async () => {
 updateDB();
 
 const getService = async (param) => {
-  console.log("param: ", param);
   if (!Object.keys(param).length) {
     return readFile(serviceDB).then((data) => JSON.parse(data));
   }
@@ -175,6 +174,30 @@ const getService = async (param) => {
         data
           .find(({ id }) => id === +param.spec)
           .work[param.month][param.day].sort((a, b) => (a > b ? 1 : -1))
+      )
+      .then((data) =>
+        readFile(orderDB)
+          .then((res) => {
+            return JSON.parse(res);
+          })
+          .then((orders) => {
+            console.log("orders: ", orders);
+            const timeList = [];
+
+            orders.forEach((item) => {
+              console.log("item: ", item);
+              if (
+                item.spec === param.spec &&
+                item.month === param.month &&
+                item.day === param.day
+              ) {
+                timeList.push(item.time);
+              }
+            });
+
+            const result = data.filter((item) => !timeList.includes(item));
+            return result;
+          })
       );
   }
 
@@ -218,7 +241,6 @@ createServer(async (req, res) => {
   try {
     if (req.method === "POST" && req.url === "/api/order") {
       const order = await createOrder(await drainJson(req));
-      console.log("order: ", order);
       res.statusCode = 201;
       res.setHeader("Access-Control-Expose-Headers", "Location");
       res.setHeader("Location", `api/order/${order.id}`);
@@ -291,7 +313,7 @@ createServer(async (req, res) => {
         `GET ${URI_PREFIX}?spec={n}&month={n} - получить список дней работы барбера`
       );
       console.log(
-        `GET ${URI_PREFIX}?spec={n}&month={n}&day={n} - получить список дней работы барбера`
+        `GET ${URI_PREFIX}?spec={n}&month={n}&day={n} - получить список свободных часов барбера`
       );
       console.log(`POST /api/order - оформить заказ`);
     }
