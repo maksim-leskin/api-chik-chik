@@ -171,9 +171,10 @@ const getService = async (param) => {
   if (param.spec && param.month && param.day) {
     return readFile(dateDB)
       .then((data) => JSON.parse(data))
-      .then(
-        (data) =>
-          data.find(({ id }) => id === +param.spec).work[param.month][param.day]
+      .then((data) =>
+        data
+          .find(({ id }) => id === +param.spec)
+          .work[param.month][param.day].sort((a, b) => (a > b ? 1 : -1))
       );
   }
 
@@ -194,7 +195,6 @@ const getService = async (param) => {
 };
 
 createServer(async (req, res) => {
-
   if (req.url.substring(1, 4) === "img") {
     res.statusCode = 200;
     res.setHeader("Content-Type", "image/jpeg");
@@ -210,9 +210,7 @@ createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-
   if (req.method === "OPTIONS") {
-
     res.end();
     return;
   }
@@ -254,7 +252,6 @@ createServer(async (req, res) => {
   }
 
   try {
-
     const body = await (async () => {
       const postPrefix = uri.substring(1);
       console.log("postPrefix: ", postPrefix);
@@ -286,15 +283,15 @@ createServer(async (req, res) => {
       console.log("Нажмите CTRL+C, чтобы остановить сервер");
       console.log("Доступные методы:");
       console.log(`GET ${URI_PREFIX} - получить список услуг`);
-      console.log(`GET ${URI_PREFIX}?/service={n} - получить список барберов`);
+      console.log(`GET ${URI_PREFIX}?service={n} - получить список барберов`);
       console.log(
-        `GET ${URI_PREFIX}?/spec={n} - получить список месяца работы барбера`
+        `GET ${URI_PREFIX}?spec={n} - получить список месяца работы барбера`
       );
       console.log(
-        `GET ${URI_PREFIX}?/spec={n}&month={n} - получить список дней работы барбера`
+        `GET ${URI_PREFIX}?spec={n}&month={n} - получить список дней работы барбера`
       );
       console.log(
-        `GET ${URI_PREFIX}?/spec={n}&month={n}&day={n} - получить список дней работы барбера`
+        `GET ${URI_PREFIX}?spec={n}&month={n}&day={n} - получить список дней работы барбера`
       );
       console.log(`POST /api/order - оформить заказ`);
     }
