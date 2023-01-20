@@ -170,11 +170,8 @@ const getService = async (param) => {
 
   if (param.spec && param.month && param.day) {
     return readFile(dateDB)
-      .then((data) => JSON.parse(data))
-      .then(
-        (data) =>
-          data.find(({ id }) => id === +param.spec).work[param.month][param.day].sort((a,b) => a > b ? 1 : -1);
-      );
+      .then(data => JSON.parse(data))
+      .then(data => data.find(({ id }) => id === +param.spec).work[param.month][param.day].sort((a,b) => a > b ? 1 : -1));
   }
 
   if (param.spec && param.month) {
